@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Felt Board - Full Page</title>
+  <style>
+    @font-face {
+      font-family: 'LetterboardWhite';
+      src: url('LetterboardWhite Pixillo.otf') format('opentype');
+      font-weight: normal;
+      font-style: normal;
+      font-display: swap;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      font-family: 'LetterboardWhite', sans-serif;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    .letterboard-container {
+      position: relative;
+      width: 100%;
+      height: 100%;
+    }
+
+    .letterboard-full {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+    }
+
+    .letterboard-full svg {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    /* Letter container for drag-and-drop */
+    .felt-letter {
+      position: absolute;
+      z-index: 2;
+      font-family: 'LetterboardWhite', sans-serif;
+      font-size: clamp(3rem, 10vw, 8rem);
+      color: #f5f5f5;
+      cursor: grab;
+      transition: transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1),
+                  top 0.3s cubic-bezier(0.34, 1.56, 0.64, 1),
+                  left 0.3s cubic-bezier(0.34, 1.56, 0.64, 1),
+                  text-shadow 0.15s ease-out,
+                  opacity 0.3s ease-out;
+      pointer-events: auto;
+      text-shadow:
+        2px 2px 4px rgba(0,0,0,.6),
+        0 1px 2px rgba(0,0,0,.4),
+        0 -1px 1px rgba(255,255,255,.1);
+      will-change: transform, text-shadow, top, left;
+      padding-top: 0;
+    }
+
+    .felt-letter:active {
+      cursor: grabbing;
+    }
+
+    /* Dragging state - elevated with dynamic shadows */
+    .felt-letter.is-dragging {
+      z-index: 100;
+      cursor: grabbing;
+      transform: scale(1.1);
+      transition: none !important;
+    }
+
+    /* Letters wrapper to hold all draggable letters */
+    .letters-wrapper {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 2;
+      pointer-events: none;
+    }
+
+    .felt-letter {
+      pointer-events: auto;
+    }
+  </style>
+</head>
+<body>
+  <div class="letterboard-container">
+    <div class="letterboard-full">
+      <svg viewBox="0 0 1200 250" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <!-- Slat pattern -->
+          <pattern id="slats-full" x="0" y="0" width="1200" height="15" patternUnits="userSpaceOnUse">
+            <!-- Slat base -->
+            <rect x="0" y="0" width="1200" height="15" fill="#1a1a1a"/>
+            <!-- Top highlight -->
+            <rect x="0" y="0" width="1200" height="2" fill="rgba(255,255,255,.12)"/>
+            <!-- Middle gradient -->
+            <rect x="0" y="2" width="1200" height="11" fill="#2d2d2d"/>
+            <!-- Bottom groove shadow -->
+            <rect class="groove-snap-line" x="0" y="13" width="1200" height="1" fill="#0a0a0a"/>
+            <!-- Bottom highlight -->
+            <rect x="0" y="14" width="1200" height="1" fill="rgba(255,255,255,.06)"/>
+          </pattern>
+
+          <!-- Vignette gradient -->
+          <radialGradient id="vignette-full" cx="50%" cy="50%" r="70%">
+            <stop offset="0%" style="stop-color:transparent"/>
+            <stop offset="100%" style="stop-color:rgba(0,0,0,.3)"/>
+          </radialGradient>
+        </defs>
+
+        <!-- Background with slat pattern -->
+        <rect x="0" y="0" width="1200" height="250" fill="url(#slats-full)"/>
+
+        <!-- Vignette overlay -->
+        <rect x="0" y="0" width="1200" height="250" fill="url(#vignette-full)"/>
+      </svg>
+    </div>
+
+    <!-- Draggable letters container -->
+    <div class="letters-wrapper" id="lettersWrapper"></div>
+  </div>
+
+  <script>
+    // Constants (SVG coordinate space)
+    const ROW_HEIGHT = 15; // SVG pattern height
+    const GROOVE_SNAP_Y = 13; // groove-snap-line y position in SVG coordinates
+    const SVG_VIEWBOX_HEIGHT = 250; // SVG viewBox height
+    const WORD_SPACING_EM = 0.85; // word gap relative to font size
+    const LETTER_SPACING_EM = 0.18; // letter gap relative to font size
+    const DRAG_LIFT_SCALE = 1.1;
+
+    // Heading size system (in rem, follows clamp: min, viewport-based, max)
+    const HEADING_SIZES = {
+      H1: { min: 4, max: 10, vw: 0.12 },  // Largest headings
+      H2: { min: 3, max: 8, vw: 0.10 },   // Large headings
+      H3: { min: 2.5, max: 6, vw: 0.08 }, // Medium headings
+      H4: { min: 2, max: 5, vw: 0.06 }    // Small headings
+    };
+
+    // State
+    let activeLetter = null;
+    let letterOffset = { x: 0, y: 0 };
+    let originalPosition = { x: 0, y: 0 };
+    let lastMousePosition = { x: 0, y: 0 };
+    let velocity = { x: 0, y: 0 };
+    let manuallyMovedLetters = new Set(); // Track letters that have been manually moved
+
+    // Calculate scale factor for SVG coordinates to screen pixels
+    function getScaleFactor() {
+      const viewportHeight = window.innerHeight;
+      return viewportHeight / SVG_VIEWBOX_HEIGHT;
+    }
+
+    // Calculate font size for a given heading level
+    function getFontSizeForHeading(level = 'H2') {
+      const viewportWidth = window.innerWidth;
+      const size = HEADING_SIZES[level] || HEADING_SIZES.H2;
+      return Math.min(
+        Math.max(size.min * 16, viewportWidth * size.vw),
+        size.max * 16
+      );
+    }
+
+    // Calculate vertical row position for heading level
+    function getRowForHeading(level = 'H2') {
+      const scaleFactor = getScaleFactor();
+      const scaledRowHeight = ROW_HEIGHT * scaleFactor;
+      const viewportHeight = window.innerHeight;
+
+      // Map heading levels to row positions from top
+      const rowMap = {
+        H1: 2,  // Near top
+        H2: 5,  // Upper-middle
+        H3: 8,  // Middle
+        H4: 11  // Lower-middle
+      };
+
+      const targetRow = rowMap[level] || rowMap.H2;
+      return (targetRow * scaledRowHeight) + (GROOVE_SNAP_Y * scaleFactor);
+    }
+
+    // Create heading text with specified size
+    function createHeading(text, level = 'H2') {
+      const wrapper = document.getElementById('lettersWrapper');
+      const viewportHeight = window.innerHeight;
+      const viewportWidth = window.innerWidth;
+
+      const computedFontSize = getFontSizeForHeading(level);
+
+      // Spacing (now controlled by the constants above)
+      const letterGap = computedFontSize * LETTER_SPACING_EM;
+      const wordGap = computedFontSize * WORD_SPACING_EM;
+
+      // Measure glyph widths in the loaded font
+      const canvas = createHeading._canvas || (createHeading._canvas = document.createElement('canvas'));
+      const ctx = canvas.getContext('2d');
+      ctx.font = `${computedFontSize}px LetterboardWhite`;
+
+      // Fixed "tile" width = widest glyph in the phrase (gives unified spacing)
+      const uniqueChars = Array.from(new Set(text.replace(/\s/g, '')));
+      const widths = uniqueChars.map(ch => ctx.measureText(ch).width || 0);
+      const tileWidth = Math.ceil(Math.max(...widths, computedFontSize * 0.5));
+
+      const words = text.split(' ');
+
+      const totalLetters = words.reduce((sum, w) => sum + w.length, 0);
+      const totalLetterGaps = totalLetters - words.length; // gaps inside words only
+      const totalWordGaps = words.length - 1;
+
+      const totalWidth =
+        (totalLetters * tileWidth) +
+        (totalLetterGaps * letterGap) +
+        (totalWordGaps * wordGap);
+
+      const startX = Math.max(20, (viewportWidth - totalWidth) / 2);
+
+      // Position based on heading level
+      const startY = getRowForHeading(level);
+
+      // Preserve manually moved letters
+      const savedPositions = new Map();
+      document.querySelectorAll('.felt-letter').forEach(letter => {
+        const index = letter.dataset.index;
+        if (manuallyMovedLetters.has(index)) {
+          savedPositions.set(index, {
+            left: parseFloat(letter.style.left),
+            top: parseFloat(letter.style.top)
+          });
+        }
+      });
+
+      // Build off-screen to avoid partial paints
+      wrapper.style.opacity = '0';
+      wrapper.innerHTML = '';
+      const frag = document.createDocumentFragment();
+
+      let currentX = startX;
+      let letterIndex = 0;
+
+      words.forEach((word, wordIndex) => {
+        for (let i = 0; i < word.length; i++) {
+          const char = word[i];
+
+          const letterEl = document.createElement('div');
+          letterEl.className = 'felt-letter';
+          letterEl.textContent = char;
+          letterEl.style.fontSize = computedFontSize + 'px';
+          letterEl.style.top = startY + 'px';
+
+          // Fixed tile sizing = unified kerning
+          letterEl.style.width = tileWidth + 'px';
+          letterEl.style.textAlign = 'center';
+          letterEl.style.lineHeight = '1';
+
+          letterEl.dataset.index = letterIndex;
+          letterEl.dataset.char = char;
+          letterEl.dataset.wordIndex = wordIndex;
+          letterEl.dataset.headingLevel = level;
+
+          if (savedPositions.has(letterIndex.toString())) {
+            const saved = savedPositions.get(letterIndex.toString());
+            letterEl.style.left = saved.left + 'px';
+            letterEl.style.top = saved.top + 'px';
+          } else {
+            letterEl.style.left = currentX + 'px';
+          }
+
+          letterEl.addEventListener('mousedown', (e) => handleDragStart(letterEl, e));
+          letterEl.addEventListener('touchstart', (e) => handleDragStart(letterEl, e), { passive: false });
+
+          frag.appendChild(letterEl);
+
+          // Always advance cursor so phrase spacing stays correct
+          currentX += tileWidth;
+          if (i < word.length - 1) currentX += letterGap;
+
+          letterIndex++;
+        }
+
+        if (wordIndex < words.length - 1) currentX += wordGap;
+      });
+
+      wrapper.appendChild(frag);
+
+      requestAnimationFrame(() => {
+        wrapper.style.opacity = '1';
+      });
+    }
+
+    // Handle drag start
+    function handleDragStart(letter, event) {
+      event.preventDefault();
+      activeLetter = letter;
+
+      const clientX = event.type.includes('mouse') ? event.clientX : event.touches[0].clientX;
+      const clientY = event.type.includes('mouse') ? event.clientY : event.touches[0].clientY;
+
+      const rect = letter.getBoundingClientRect();
+      letterOffset.x = clientX - rect.left;
+      letterOffset.y = clientY - rect.top;
+
+      originalPosition.x = parseFloat(letter.style.left);
+      originalPosition.y = parseFloat(letter.style.top);
+
+      lastMousePosition.x = clientX;
+      lastMousePosition.y = clientY;
+      velocity.x = 0;
+      velocity.y = 0;
+
+      letter.classList.add('is-dragging');
+    }
+
+    // Handle drag move
+    function handleDragMove(event) {
+      if (!activeLetter) return;
+      event.preventDefault();
+
+      const clientX = event.type.includes('mouse') ? event.clientX : event.touches[0].clientX;
+      const clientY = event.type.includes('mouse') ? event.clientY : event.touches[0].clientY;
+
+      // Calculate velocity
+      velocity.x = clientX - lastMousePosition.x;
+      velocity.y = clientY - lastMousePosition.y;
+
+      // Update position
+      const newX = clientX - letterOffset.x;
+      const newY = clientY - letterOffset.y;
+
+      activeLetter.style.left = newX + 'px';
+      activeLetter.style.top = newY + 'px';
+
+      // Update dynamic shadows
+      updateDragShadows(activeLetter, velocity.x, velocity.y);
+
+      lastMousePosition.x = clientX;
+      lastMousePosition.y = clientY;
+    }
+
+    // Handle drag end
+    function handleDragEnd(event) {
+      if (!activeLetter) return;
+
+      const currentX = parseFloat(activeLetter.style.left);
+      const currentY = parseFloat(activeLetter.style.top);
+
+      // Calculate snap position
+      const snappedPos = calculateSnapPosition(currentX, currentY);
+
+      // Apply snap immediately
+      activeLetter.classList.remove('is-dragging');
+      activeLetter.style.left = snappedPos.x + 'px';
+      activeLetter.style.top = snappedPos.y + 'px';
+
+      // Mark this letter as manually moved so it won't be re-kerned on resize
+      manuallyMovedLetters.add(activeLetter.dataset.index);
+
+      // Reset shadow to default
+      activeLetter.style.textShadow = `
+        2px 2px 4px rgba(0,0,0,.6),
+        0 1px 2px rgba(0,0,0,.4),
+        0 -1px 1px rgba(255,255,255,.1)
+      `;
+
+      activeLetter = null;
+      velocity.x = 0;
+      velocity.y = 0;
+    }
+
+    // Calculate snap position to grid
+    function calculateSnapPosition(x, y) {
+      const viewportHeight = window.innerHeight;
+      const viewportWidth = window.innerWidth;
+
+      // Get scale factor to match SVG rendering
+      const scaleFactor = getScaleFactor();
+
+      // Scale pattern dimensions to screen pixels
+      const scaledRowHeight = ROW_HEIGHT * scaleFactor;
+      const scaledGrooveSnapY = GROOVE_SNAP_Y * scaleFactor;
+
+      // Snap letter TOP to groove-snap-line at scaled positions
+      const row = Math.round((y - scaledGrooveSnapY) / scaledRowHeight);
+      const snappedY = (row * scaledRowHeight) + scaledGrooveSnapY;
+
+      // Constrain to viewport bounds
+      const constrainedX = Math.max(0, Math.min(x, viewportWidth - 50));
+      const constrainedY = Math.max(scaledGrooveSnapY, Math.min(snappedY, viewportHeight - 50));
+
+      return { x: constrainedX, y: constrainedY };
+    }
+
+    // Update dynamic shadows during drag
+    function updateDragShadows(letter, deltaX, deltaY) {
+      const speed = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+      const maxSpeed = 30;
+      const normalizedSpeed = Math.min(speed / maxSpeed, 1);
+
+      // Shadow extends opposite to movement
+      const shadowOffsetX = -deltaX * 0.3;
+      const shadowOffsetY = -deltaY * 0.3 + 8;
+      const shadowBlur = 8 + normalizedSpeed * 8;
+
+      // Highlight follows movement
+      const highlightOffsetX = deltaX * 0.1;
+      const highlightOffsetY = deltaY * 0.1 - 2;
+
+      letter.style.textShadow = `
+        ${shadowOffsetX}px ${shadowOffsetY}px ${shadowBlur}px rgba(0,0,0,${0.6 + normalizedSpeed * 0.2}),
+        ${highlightOffsetX}px ${highlightOffsetY}px 4px rgba(255,255,255,${0.3 + normalizedSpeed * 0.2}),
+        0 0 2px rgba(255,255,255,${0.1 + normalizedSpeed * 0.1}),
+        0 -1px 1px rgba(255,255,255,.1)
+      `;
+    }
+
+    // Global event listeners
+    document.addEventListener('mousemove', handleDragMove);
+    document.addEventListener('mouseup', handleDragEnd);
+    document.addEventListener('touchmove', handleDragMove, { passive: false });
+    document.addEventListener('touchend', handleDragEnd);
+
+    // Initialize all headings on page load
+    function initializeLetters() {
+      // Clear existing letters
+      const wrapper = document.getElementById('lettersWrapper');
+      wrapper.innerHTML = '';
+
+      // Create H1 heading at the top
+      createHeading('James Crook', 'H1');
+    }
+
+    // Handle window resize
+    let resizeTimeout;
+    window.addEventListener('resize', () => {
+      clearTimeout(resizeTimeout);
+      resizeTimeout = setTimeout(() => {
+        // Clear and recreate all headings
+        initializeLetters();
+      }, 250);
+    });
+
+    // Initialize on load with proper font loading
+    window.addEventListener('DOMContentLoaded', () => {
+      const boot = () => initializeLetters();
+
+      if (document.fonts && document.fonts.load) {
+        document.fonts.load('16px LetterboardWhite')
+          .then(() => (document.fonts.ready ? document.fonts.ready : null))
+          .then(boot)
+          .catch(boot);
+      } else {
+        boot();
+      }
+    });
+  </script>
+</body>
+</html>

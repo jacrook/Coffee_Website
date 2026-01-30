@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Felt Board Visual Prototype Test</title>
+  <link rel="stylesheet" href="letterboard.css">
+</head>
+<body>
+  <h1>Felt Board Visual Prototype Test</h1>
+
+  <div class="demo-container">
+    <!-- Option A: CSS Gradients -->
+    <section class="css-approach">
+      <h2>Option A: CSS Gradients</h2>
+      <div class="letterboard">
+        <!-- Empty - testing background only -->
+      </div>
+    </section>
+
+    <!-- Option B: SVG Pattern -->
+    <section class="svg-approach">
+      <h2>Option B: SVG Pattern</h2>
+      <div class="letterboard-svg">
+        <svg viewBox="0 0 1200 250" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <!-- Base gradient -->
+            <linearGradient id="bgGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" style="stop-color:#3a3a3a"/>
+              <stop offset="50%" style="stop-color:#2a2a2a"/>
+              <stop offset="100%" style="stop-color:#3a3a3a"/>
+            </linearGradient>
+
+            <!-- Slat pattern -->
+            <pattern id="slats" x="0" y="0" width="1200" height="15" patternUnits="userSpaceOnUse">
+              <!-- Slat base -->
+              <rect x="0" y="0" width="1200" height="15" fill="#242424"/>
+              <!-- Top highlight -->
+              <rect x="0" y="0" width="1200" height="1" fill="rgba(255,255,255,.08)"/>
+              <!-- Middle gradient -->
+              <rect x="0" y="1" width="1200" height="12" fill="#3a3a3a"/>
+              <!-- Bottom groove shadow -->
+              <rect x="0" y="13" width="1200" height="1" fill="#1b1b1b"/>
+              <!-- Bottom highlight -->
+              <rect x="0" y="14" width="1200" height="1" fill="rgba(255,255,255,.08)"/>
+            </pattern>
+
+            <!-- Inner shadow filter -->
+            <filter id="innerShadow" x="-20%" y="-20%" width="140%" height="140%">
+              <feGaussianBlur in="SourceAlpha" stdDeviation="3" result="blur"/>
+              <feOffset dx="0" dy="2"/>
+              <feComposite in2="SourceAlpha" operator="arithmetic" k2="-1" k3="1"/>
+              <feColorMatrix type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.4 0"/>
+              <feBlend in2="SourceGraphic" mode="normal"/>
+            </filter>
+
+            <!-- Vignette gradient -->
+            <radialGradient id="vignette" cx="50%" cy="50%" r="70%">
+              <stop offset="0%" style="stop-color:transparent"/>
+              <stop offset="100%" style="stop-color:rgba(0,0,0,.3)"/>
+            </radialGradient>
+          </defs>
+
+          <!-- Background with slat pattern -->
+          <rect x="0" y="0" width="1200" height="250" fill="url(#slats)" rx="10" ry="10"/>
+
+          <!-- Inner shadow effect -->
+          <rect x="0" y="0" width="1200" height="250" fill="none" stroke="rgba(0,0,0,.4)" stroke-width="4" rx="10" ry="10"/>
+
+          <!-- Vignette overlay -->
+          <rect x="0" y="0" width="1200" height="250" fill="url(#vignette)" rx="10" ry="10"/>
+        </svg>
+      </div>
+    </section>
+  </div>
+</body>
+</html>

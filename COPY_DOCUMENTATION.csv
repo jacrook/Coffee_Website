@@ -1,0 +1,27 @@
+Section,Panel Type,Element,Content/Copy,Notes
+Home Page,Title,H1 Text,"James Crook",Draggable letter tiles, row 2
+Home Page,Menu,Menu Item 1,"Journey",Clickable tile, row 5, opens Journey panel
+Home Page,Menu,Menu Item 2,"Craft",Clickable tile, row 7, opens Craft panel
+Home Page,Menu,Menu Item 3,"Gallery",Clickable tile, row 9, opens Gallery panel
+Home Page,Menu,Menu Item 4,"Contact",Clickable tile, row 11, opens Contact panel
+Home Page,Hero,Default Content,"Hero Polaroid with caption 'James Crook'",Centered in right 80%, draggable
+Interstitial,Journey,Title,"Journey",Sharpie/exposition font, black, two-column layout (40% text, 60% image)
+Interstitial,Journey,Body,"I started making coffee at home with a basic drip machine and some curiosity. A work trip to Germany shifted my perspective—espresso there wasn't just about caffeine, it was something people took time with. When I got back, I got into Aeropress, Chemex, and eventually settled on the V60. I spent a lot of time tweaking grind size, water temperature, and timing until the cup came out right.
+
+That same attention to detail carried over when I started working at Zemi. I learned how to keep quality up while moving fast—staying organized, calm, and actually welcoming, one drink at a time.",Source Serif 4 font, black, left-aligned, left column (40%)
+Interstitial,Journey,Image,"/coffee-journey-sharpie.svg",SVG sharpie illustration, right column (60%)
+Interstitial,Craft,Title,"Craft",Sharpie/exposition font, black, centered layout (no image)
+Interstitial,Craft,Body,"Software craftsmanship is about more than just writing code—it's about understanding problems deeply and creating solutions that stand the test of time.
+
+My toolkit includes modern frameworks, tested patterns, and a commitment to clean, maintainable code. I specialize in React, TypeScript, and building scalable web applications.",Source Serif 4 font, black
+Interstitial,Contact,Title,"Contact",Sharpie/exposition font, black
+Interstitial,Contact,Body,"[CONTACT FORM]",Form fields: Name, Email, Message
+Interstitial,Contact,Form - Label 1,"Name",Letterboard font, black, ~18-22px, left-aligned
+Interstitial,Contact,Form - Label 2,"Email",Letterboard font, black, ~18-22px, left-aligned
+Interstitial,Contact,Form - Label 3,"Message",Letterboard font, black, ~18-22px, left-aligned
+Interstitial,Contact,Form - Button Text,"Send",Sharpie/exposition font, black, sharpie border
+Interstitial,Contact,Form - Success Message,"Message sent ✅ I'll get back to you soon.",Letterboard font, black
+Interstitial,Contact,Form - Error Message,"Please enter your name",Source Serif 4, red, visible below field
+Interstitial,Contact,Form - Error Message,"Please enter a valid email",Source Serif 4, red, visible below field
+Interstitial,Contact,Form - Error Message,"Message should be at least 10 characters",Source Serif 4, red, visible below field
+Interstitial,Gallery,Content,"6-12 randomly positioned polaroids",Individually draggable, bring-to-front on drag

@@ -1,0 +1,165 @@
+@import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,300;8..60,400;8..60,500;8..60,600;8..60,700&display=swap');
+
+@font-face {
+  font-family: 'LetterboardWhite Pixillo';
+  src: url('/fonts/LetterboardWhite Pixillo.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Sharpie/exposition font for butcher paper headers */
+@font-face {
+  font-family: 'expositionmedium';
+  src: url('/exposition-4d49-webfont.woff2') format('woff2'),
+       url('/exposition-4d49-webfont.woff') format('woff');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Sharpie SVG styling - works best on stroke SVG */
+.sharpie-svg-container svg path {
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-miterlimit: 1;
+}
+
+/* Solid black sharpie SVG styling */
+.sharpieSolid path,
+.sharpieSolid polygon,
+.sharpieSolid polyline {
+  fill: #000 !important;
+  stroke: none !important;
+}
+
+/* Make sharpie SVG container transparent - no white background */
+.sharpie-svg-container {
+  background: transparent !important;
+}
+
+/* Make img element transparent */
+.sharpie-svg-container img {
+  background: transparent !important;
+}
+
+
+/* Sharpie draw animation */
+@keyframes drawPath {
+  0% {
+    stroke-dashoffset: var(--path-length);
+    fill-opacity: 0;
+  }
+  90% {
+    stroke-dashoffset: 0;
+    fill-opacity: 0;
+  }
+  100% {
+    stroke-dashoffset: 0;
+    fill-opacity: 1;
+  }
+}
+
+.sharpie-draw-container svg path {
+  /* Start as stroked paths for animation */
+  fill: #000;
+  fill-opacity: 0;
+  stroke: #000;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-miterlimit: 1;
+
+  /* Initial state: invisible */
+  stroke-dasharray: var(--path-length);
+  stroke-dashoffset: var(--path-length);
+
+  /* Performance hint */
+  will-change: stroke-dashoffset, fill-opacity;
+}
+
+.sharpie-draw-container svg path.animating {
+  /* Apply animation with staggered delay */
+  animation: drawPath 800ms ease-out forwards;
+  animation-delay: var(--stagger-delay);
+}
+
+/* Respect user's motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  .sharpie-draw-container svg path {
+    stroke-dashoffset: 0 !important;
+    fill-opacity: 1 !important;
+    animation: none !important;
+  }
+}
+
+@theme {
+  --font-family-letterboard: 'LetterboardWhite Pixillo', sans-serif;
+  --font-family-sharpie: 'expositionmedium', cursive;
+}
+
+:root {
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+
+  color-scheme: light dark;
+  color: rgba(255, 255, 255, 0.87);
+  background-color: #242424;
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+}
+
+#root {
+  width: 100%;
+  min-height: 100vh;
+}
+
+/* Tile animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translate3d(var(--tile-x), var(--tile-y), 0) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(var(--tile-x), var(--tile-y), 0) scale(1);
+  }
+}
+
+.tile {
+  animation: fadeIn 0.3s ease-out backwards;
+}
+
+/* Smooth scroll */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #1a1a1a;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #333;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #444;
+}

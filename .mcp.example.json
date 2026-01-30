@@ -1,0 +1,56 @@
+# MCP Server Configuration
+
+This project uses Model Context Protocol (MCP) servers to extend Claude's capabilities.
+
+## GitHub MCP Server
+
+The GitHub MCP server is configured in `.mcp.json` and allows Claude to:
+- Create and view GitHub issues
+- Create and review pull requests
+- Check GitHub Actions workflow runs
+- Manage releases
+
+### Setup
+
+1. **Create a GitHub Personal Access Token**:
+   - Go to https://github.com/settings/tokens
+   - Click "Generate new token" → "Generate new token (classic)"
+   - Select scopes:
+     - `repo` (full control of private repositories)
+     - `issues` (full control of issues)
+     - `pull_requests` (full control of pull requests)
+     - `actions` (full control of Actions workflows)
+   - Generate and copy the token
+
+2. **Configure the token**:
+   - Open `.mcp.json`
+   - Replace the empty `GITHUB_PERSONAL_ACCESS_TOKEN` value with your token:
+     ```json
+     "env": {
+       "GITHUB_PERSONAL_ACCESS_TOKEN": "ghp_your_token_here"
+     }
+     ```
+
+3. **Restart Claude Code** to load the MCP server configuration
+
+### Security Note
+
+**⚠️ IMPORTANT**: Never commit `.mcp.json` with a real token to git!
+
+The `.gitignore` file has been updated to exclude `.mcp.json`, so your token won't be accidentally committed.
+
+## Using GitHub MCP
+
+Once configured, you can ask Claude to:
+- "Create an issue for this bug"
+- "Create a pull request for these changes"
+- "Check the status of the latest CI run"
+- "List open issues in the repository"
+
+## Troubleshooting
+
+If the GitHub MCP server isn't working:
+1. Verify your token has the correct scopes
+2. Check that the token hasn't expired
+3. Run `claude --mcp-debug` to identify configuration issues
+4. Ensure the repository has a GitHub remote configured
