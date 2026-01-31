@@ -21,9 +21,9 @@ const PANEL_CONTENT: Record<
 > = {
   journey: {
     title: 'Journey',
-    body: `I started making coffee at home with a basic drip machine and some curiosity. A work trip to Germany shifted my perspective—espresso there wasn't just about caffeine, it was something people took time with. When I got back, I got into Aeropress, Chemex, and eventually settled on the V60. I spent a lot of time tweaking grind size, water temperature, and timing until the cup came out right.
+    body: `I started making coffee at home with a basic drip machine and some curiosity. A work trip to Germany shifted my perspective; espresso there wasn't just about caffeine, it was something people took time with. When I got back, I got into Aeropress, Chemex, and eventually settled on the V60. I spent a lot of time tweaking grind size, water temperature, and timing until the cup came out right.
 
-That same attention to detail carried over when I started working at Zemi. I learned how to keep quality up while moving fast—staying organized, calm, and actually welcoming, one drink at a time.`,
+That same attention to detail carried over when I started working at Zemi. I learned how to keep quality up while moving fast by staying organized, calm, and actually welcoming, one drink at a time.`,
     hasImage: true,
     imageSrc: '/coffee_journey_sharpie_2_cropped_solid_black.svg',
   },
