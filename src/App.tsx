@@ -1,9 +1,10 @@
-import { useReducer, useCallback, useEffect, useRef } from 'react';
+import { useReducer, useCallback, useEffect, useRef, useState } from 'react';
 import { DndContext, DragEndEvent, DragStartEvent } from '@dnd-kit/core';
 import { LetterboardHero } from './components/letterboard/LetterboardHero';
 import { TopBar } from './components/TopBar';
 import { LeftMenuTiles } from './components/letterboard/LeftMenuTiles';
 import { RightStage } from './components/RightStage';
+import { MobileInterstitial } from './components/MobileInterstitial';
 import { letterboardReducer } from './utils/letterboardReducer';
 import { createHeroPolaroids } from './utils/polaroidLayout';
 import { preloadAllImages } from './utils/imagePreload';
@@ -37,6 +38,18 @@ const initialState: LetterboardState = {
 function App() {
   const [state, dispatch] = useReducer(letterboardReducer, initialState);
   const previousMetricsRef = useRef<BoardMetrics | null>(null);
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Detect mobile viewport
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   const handleFontReady = useCallback(() => {
     dispatch({ type: 'FONT_READY' });
@@ -135,6 +148,11 @@ function App() {
   const handleTopBarContactClick = useCallback(() => {
     dispatch({ type: 'PANEL_OPEN', panelType: 'contact' });
   }, []);
+
+  // Show mobile interstitial for mobile devices
+  if (isMobile) {
+    return <MobileInterstitial />;
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-900 to-gray-800">
