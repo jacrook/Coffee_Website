@@ -6,7 +6,7 @@
   src: url('/fonts/LetterboardWhite Pixillo.otf') format('opentype');
   font-weight: normal;
   font-style: normal;
-  font-display: swap;
+  font-display: optional;
 }
 
 /* Sharpie/exposition font for butcher paper headers */
